@@ -1,7 +1,7 @@
 /**
  * Created by johanrovala on 08/12/16.
  */
-public class POSTTABLE {
+public class PostEntry {
     public String id;
     public String parent_id;
     public String link_id;
@@ -12,4 +12,9 @@ public class POSTTABLE {
     public String subreddit;
     public Integer score;
     public String created_utc;
+
+    @Override
+    public String toString() {
+        return "id: " + id + " - body: " + body;
+    }
 }
