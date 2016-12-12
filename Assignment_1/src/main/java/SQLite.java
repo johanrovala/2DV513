@@ -19,10 +19,7 @@ public class SQLite {
 
     public static void main(String[] args) {
         conn = null;
-        Statement st = null;
-
-        //JSONParser parser = new JSONParser();
-
+        Statement st;
         try {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:test.db");
@@ -51,24 +48,22 @@ public class SQLite {
             e.printStackTrace();
         }
         System.out.println("Table created successfully");
-        File file = new File("src\\main\\resources\\RC_2011-07");
-        System.out.println(file.exists());
+        File file = new File("src/main/resources/RC_2011-07");
         Long startTime = System.nanoTime();
         System.out.println("Starting to read + insert..");
-
 
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-            List<PostEntry> objects = new ArrayList<PostEntry>();
-            Iterator<PostEntry> iterator = mapper.reader(PostEntry.class).readValues(file);
             conn.setAutoCommit(false);
             PreparedStatement stmt = conn.prepareStatement
                     ("INSERT INTO POST VALUES(?,?,?,?,?,?,?,?,?,?)");
             int l = 0;
-            while(iterator.hasNext()) {
-                PostEntry obj = iterator.next();
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+            String line = bufferedReader.readLine();
+            while(line != null) {
+                PostEntry obj = mapper.readValue(line, PostEntry.class);
                 stmt.setString(1,obj.id);
                 stmt.setString(2,obj.parent_id);
                 stmt.setString(3,obj.link_id);
@@ -79,11 +74,11 @@ public class SQLite {
                 stmt.setString(8,obj.subreddit);
                 stmt.setInt(9,obj.score);
                 stmt.setString(10,obj.created_utc);
-                stmt.addBatch();
+                stmt.executeUpdate();
                 l++;
+                line = bufferedReader.readLine();//Next line
             }
             System.out.println("executing inserts...");
-            stmt.executeBatch();
             conn.commit();
             long time = (System.nanoTime() - startTime) / 1000000000;
             System.out.println("Done inserting " + l + " objects. Time: " + time);
@@ -100,8 +95,6 @@ public class SQLite {
             Statement statement = conn.createStatement();
             String SQL = "DELETE FROM " + TABLE_NAME;
             statement.execute(SQL);
-
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
