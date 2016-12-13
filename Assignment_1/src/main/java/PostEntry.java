@@ -10,8 +10,8 @@ public class PostEntry {
     public String body;
     public String subreddit_id;
     public String subreddit;
-    public Integer score;
-    public String created_utc;
+    public int score;
+    public int created_utc;
 
     @Override
     public String toString() {
