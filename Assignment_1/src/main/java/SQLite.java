@@ -23,10 +23,10 @@ public class SQLite {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:test.db");
             System.out.println("Success");
-
+            clearTable();
             createTables();
             System.out.println("Table created successfully");
-            clearTable();
+
             File file = new File("src/main/resources/RC_2007-10");
             importJohanData(file);
 
@@ -79,25 +79,22 @@ public class SQLite {
     }
 
     private static void clearTable() throws SQLException {
-        System.out.println("Clearing table " + TABLE_NAME + "...");
+        System.out.println("Clearing,....");
         Statement statement;
         String SQL;
 
         statement = conn.createStatement();
-        SQL = "DELETE FROM " + COMMENT_TABLE;
+        SQL = "DROP TABLE IF EXISTS " + COMMENT_TABLE;
         statement.execute(SQL);
         statement = conn.createStatement();
-        SQL = "DELETE FROM " + LINK_TABLE;
+        SQL = "DROP TABLE IF EXISTS " + LINK_TABLE;
         statement.execute(SQL);
         statement = conn.createStatement();
-        SQL = "DELETE FROM " + USER_TABLE;
+        SQL = "DROP TABLE IF EXISTS " + USER_TABLE;
         statement.execute(SQL);
         statement = conn.createStatement();
-        SQL = "DELETE FROM " + SUBREDDIT_TABLE;
+        SQL = "DROP TABLE IF EXISTS " + SUBREDDIT_TABLE;
         statement.execute(SQL);
-
-
-
     }
 
 
@@ -108,8 +105,9 @@ public class SQLite {
 
         st = conn.createStatement();
         sql = "CREATE TABLE IF NOT EXISTS " + USER_TABLE +
-                " (author TEXT)";
-        st.executeUpdate(sql);
+                " (author TEXT PRIMARY KEY )";
+
+                st.executeUpdate(sql);
         st.close();
 
         st = conn.createStatement();
@@ -128,7 +126,6 @@ public class SQLite {
         sql = "CREATE TABLE IF NOT EXISTS " + LINK_TABLE +
                 " (link_id TEXT, " +
                 "subreddit_id TEXT)";
-
         st.executeUpdate(sql);
         st.close();
 
@@ -149,8 +146,7 @@ public class SQLite {
         conn.setAutoCommit(false);
 
         PreparedStatement userStatement = conn.prepareStatement
-                ("INSERT INTO " + USER_TABLE + " VALUES(?)"
-                +" SELECT ");
+                ("INSERT OR IGNORE INTO " + USER_TABLE + " VALUES(?)");
         PreparedStatement commentStatement = conn.prepareStatement
                 ("INSERT INTO " + COMMENT_TABLE + " VALUES(?,?,?,?,?,?,?)");
         PreparedStatement linkStatement = conn.prepareStatement
