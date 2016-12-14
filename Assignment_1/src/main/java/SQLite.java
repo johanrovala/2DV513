@@ -1,6 +1,7 @@
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.sqlite.SQLiteConfig;
 
 import java.io.*;
 import java.sql.*;
@@ -20,20 +21,22 @@ public class SQLite {
         conn = null;
 
         try {
+            SQLiteConfig config = new SQLiteConfig();
+            config.enforceForeignKeys(true);
             Class.forName("org.sqlite.JDBC");
-            conn = DriverManager.getConnection("jdbc:sqlite:test.db");
+            conn = DriverManager.getConnection("jdbc:sqlite:test.db", config.toProperties());
             System.out.println("Connection to DB up..");
-            File file = new File("src/main/resources/RC_2011-07");
+            File file = new File("src/main/resources/RC200710.txt");
 
             DBPerfect dbPerfect = new DBPerfect(conn);
-            DBWithoutConstraints dbWithoutConstraints = new DBWithoutConstraints(conn);
+           // DBWithoutConstraints dbWithoutConstraints = new DBWithoutConstraints(conn);
 
-            dbWithoutConstraints.clearTables();
+           /* dbWithoutConstraints.clearTables();
             dbWithoutConstraints.createTables();
             dbWithoutConstraints.importData(file);
 
             dbWithoutConstraints.clearTables();
-            
+            */
             dbPerfect.clearTables();
             dbPerfect.createTables();
             dbPerfect.importData(file);

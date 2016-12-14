@@ -77,7 +77,6 @@ public class DBWithoutConstraints implements DB {
             conn.commit();
             long time = (System.nanoTime() - startTime) / 1000000000;
             System.out.println("Done inserting " + l + " objects. Time: " + time);
-            conn.close();
         } catch(SQLException e) {
             e.printStackTrace();
         } catch (IOException e) {

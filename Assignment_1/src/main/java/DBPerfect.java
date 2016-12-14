@@ -36,7 +36,7 @@ public class DBPerfect implements DB {
         try {
             st = conn.createStatement();
             sql = "CREATE TABLE IF NOT EXISTS " + USER_TABLE +
-                    " (author TEXT PRIMARY KEY )";
+                    " (author TEXT PRIMARY KEY)";
 
             st.executeUpdate(sql);
             st.close();
@@ -49,20 +49,23 @@ public class DBPerfect implements DB {
                     "author TEXT," +
                     "body TEXT," +
                     "score INT," +
-                    "create_utc INT)";
+                    "create_utc INT, " +
+                    "FOREIGN KEY (author) REFERENCES " + USER_TABLE + "(author) ON DELETE CASCADE," +
+                    "FOREIGN KEY (link_id) REFERENCES " + LINK_TABLE + "(link_id) ON DELETE CASCADE)";
             st.executeUpdate(sql);
             st.close();
 
             st = conn.createStatement();
             sql = "CREATE TABLE IF NOT EXISTS " + LINK_TABLE +
-                    " (link_id TEXT, " +
-                    "subreddit_id TEXT)";
+                    " (link_id TEXT PRIMARY KEY, " +
+                    "subreddit_id TEXT," +
+                    "FOREIGN KEY (subreddit_id) REFERENCES "+ SUBREDDIT_TABLE + "(subreddit_id) ON UPDATE CASCADE)";
             st.executeUpdate(sql);
             st.close();
 
             st = conn.createStatement();
             sql = "CREATE TABLE IF NOT EXISTS " + SUBREDDIT_TABLE +
-                    " (subreddit_id TEXT," +
+                    " (subreddit_id TEXT PRIMARY KEY," +
                     "subreddit TEXT)";
             st.executeUpdate(sql);
             st.close();
@@ -85,9 +88,9 @@ public class DBPerfect implements DB {
             PreparedStatement commentStatement = conn.prepareStatement
                     ("INSERT INTO " + COMMENT_TABLE + " VALUES(?,?,?,?,?,?,?)");
             PreparedStatement linkStatement = conn.prepareStatement
-                    ("INSERT INTO " + LINK_TABLE + " VALUES(?,?)");
+                    ("INSERT OR IGNORE INTO " + LINK_TABLE + " VALUES(?,?)");
             PreparedStatement subredditStatement = conn.prepareStatement
-                    ("INSERT INTO " + SUBREDDIT_TABLE + " VALUES(?,?)");
+                    ("INSERT OR IGNORE INTO " + SUBREDDIT_TABLE + " VALUES(?,?)");
 
 
             int l = 0;
@@ -97,6 +100,9 @@ public class DBPerfect implements DB {
                 PostEntry obj = mapper.readValue(line, PostEntry.class);
                 userStatement.setString(1, obj.author);
 
+                linkStatement.setString(1, obj.link_id);
+                linkStatement.setString(2, obj.subreddit_id);
+
                 commentStatement.setString(1, obj.id);
                 commentStatement.setString(2, obj.parent_id);
                 commentStatement.setString(3, obj.link_id);
@@ -105,21 +111,19 @@ public class DBPerfect implements DB {
                 commentStatement.setInt(6, obj.score);
                 commentStatement.setInt(7, obj.created_utc);
 
-                linkStatement.setString(1, obj.link_id);
-                linkStatement.setString(2, obj.subreddit_id);
-
                 subredditStatement.setString(1, obj.subreddit_id);
                 subredditStatement.setString(2, obj.subreddit);
 
                 userStatement.executeUpdate();
-                commentStatement.executeUpdate();
-                linkStatement.executeUpdate();
                 subredditStatement.executeUpdate();
+                linkStatement.executeUpdate();
+                commentStatement.executeUpdate();
                 l++;
                 line = bufferedReader.readLine();//Next line
             }
             conn.commit();
             System.out.println(l + " items inserted, time: " + (System.nanoTime() - startime) / 1000000000);
+            deleteGigaFuck();
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -127,6 +131,12 @@ public class DBPerfect implements DB {
         }
     }
 
+    private void deleteGigaFuck() throws SQLException {
+        String query = "DELETE FROM USERS WHERE USERS.author=\"gigaquack\"";
+        System.out.println(query);
+        conn.createStatement().execute(query);
+
+    }
 
     public void clearTables() {
         System.out.println("Clearing,....");
