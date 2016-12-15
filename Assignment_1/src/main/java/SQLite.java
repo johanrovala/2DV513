@@ -26,21 +26,19 @@ public class SQLite {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:test.db", config.toProperties());
             System.out.println("Connection to DB up..");
-            File file = new File("src/main/resources/RC200710.txt");
+            File file = new File("src/main/resources/RC_2011-07");
 
             DBPerfect dbPerfect = new DBPerfect(conn);
-           // DBWithoutConstraints dbWithoutConstraints = new DBWithoutConstraints(conn);
-
-           /* dbWithoutConstraints.clearTables();
-            dbWithoutConstraints.createTables();
-            dbWithoutConstraints.importData(file);
+            DBWithoutConstraints dbWithoutConstraints = new DBWithoutConstraints(conn);
 
             dbWithoutConstraints.clearTables();
-            */
+            dbWithoutConstraints.createTables();
+            dbWithoutConstraints.importData(file);
+            dbWithoutConstraints.clearTables();
+
             dbPerfect.clearTables();
             dbPerfect.createTables();
             dbPerfect.importData(file);
-
 
         } catch (SQLException e) {
             e.printStackTrace();

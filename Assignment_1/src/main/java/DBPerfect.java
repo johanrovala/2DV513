@@ -5,25 +5,19 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
-/**
- * Created by Ludde on 2016-12-13.
- */
-public class DBPerfect implements DB {
+class DBPerfect implements DB {
 
 
-    String USER_TABLE = "USERS";
-    String COMMENT_TABLE = "COMMENTS";
-    String LINK_TABLE = "LINKS";
-    String SUBREDDIT_TABLE = "SUBREDDITS";
+    private String USER_TABLE = "USERS";
+    private String LINK_TABLE = "LINKS";
+    private String SUBREDDIT_TABLE = "SUBREDDITS";
+    private String COMMENT_TABLE = "COMMENTS";
 
-    Connection conn;
+    private Connection conn;
 
-    public DBPerfect(Connection conn) {
+    DBPerfect(Connection conn) {
         this.conn = conn;
     }
 
@@ -43,36 +37,34 @@ public class DBPerfect implements DB {
 
             st = conn.createStatement();
             sql = "CREATE TABLE IF NOT EXISTS " + COMMENT_TABLE +
-                    " (id TEXT," +
-                    "parent_id TEXT," +
-                    "link_id TEXT, " +
-                    "author TEXT," +
-                    "body TEXT," +
-                    "score INT," +
-                    "create_utc INT, " +
-                    "FOREIGN KEY (author) REFERENCES " + USER_TABLE + "(author) ON DELETE CASCADE," +
-                    "FOREIGN KEY (link_id) REFERENCES " + LINK_TABLE + "(link_id) ON DELETE CASCADE)";
+                    " (id TEXT PRIMARY KEY," +
+                    "parent_id TEXT NOT NULL ," +
+                    "link_id TEXT NOT NULL , " +
+                    "author TEXT NOT NULL ," +
+                    "body TEXT NOT NULL ," +
+                    "score INT NOT NULL ," +
+                    "create_utc INT NOT NULL)";
             st.executeUpdate(sql);
             st.close();
 
             st = conn.createStatement();
             sql = "CREATE TABLE IF NOT EXISTS " + LINK_TABLE +
                     " (link_id TEXT PRIMARY KEY, " +
-                    "subreddit_id TEXT," +
-                    "FOREIGN KEY (subreddit_id) REFERENCES "+ SUBREDDIT_TABLE + "(subreddit_id) ON UPDATE CASCADE)";
+                    "subreddit_id TEXT NOT NULL)";
             st.executeUpdate(sql);
             st.close();
 
             st = conn.createStatement();
             sql = "CREATE TABLE IF NOT EXISTS " + SUBREDDIT_TABLE +
                     " (subreddit_id TEXT PRIMARY KEY," +
-                    "subreddit TEXT)";
+                    "subreddit TEXT NOT NULL UNIQUE)";
             st.executeUpdate(sql);
             st.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
 
     public void importData(File file) {
         System.out.println("Importing data \"perfectly\".");
@@ -86,7 +78,7 @@ public class DBPerfect implements DB {
             PreparedStatement userStatement = conn.prepareStatement
                     ("INSERT OR IGNORE INTO " + USER_TABLE + " VALUES(?)");
             PreparedStatement commentStatement = conn.prepareStatement
-                    ("INSERT INTO " + COMMENT_TABLE + " VALUES(?,?,?,?,?,?,?)");
+                    ("INSERT OR IGNORE INTO " + COMMENT_TABLE + " VALUES(?,?,?,?,?,?,?)");
             PreparedStatement linkStatement = conn.prepareStatement
                     ("INSERT OR IGNORE INTO " + LINK_TABLE + " VALUES(?,?)");
             PreparedStatement subredditStatement = conn.prepareStatement
@@ -122,8 +114,8 @@ public class DBPerfect implements DB {
                 line = bufferedReader.readLine();//Next line
             }
             conn.commit();
+            conn.setAutoCommit(true);           //Set back to true so we dont have to commit everything in future
             System.out.println(l + " items inserted, time: " + (System.nanoTime() - startime) / 1000000000);
-            deleteGigaFuck();
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -131,11 +123,26 @@ public class DBPerfect implements DB {
         }
     }
 
-    private void deleteGigaFuck() throws SQLException {
-        String query = "DELETE FROM USERS WHERE USERS.author=\"gigaquack\"";
-        System.out.println(query);
-        conn.createStatement().execute(query);
+    public void deleteUser(String user) throws SQLException {
+        conn.createStatement().executeUpdate("DELETE FROM " + USER_TABLE + " WHERE author='" + user + "'");
+    }
 
+    public void deleteCommentByUsername(String user) throws SQLException {
+        conn.createStatement().executeUpdate("DELETE FROM " + COMMENT_TABLE + " WHERE author='" + user + "'");
+    }
+
+    public void getCommentsForUser(String user) throws SQLException {
+        ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM " + COMMENT_TABLE + " WHERE author='" + user + "'");
+        ResultSetMetaData rsmd = rs.getMetaData();
+
+        int coln = rsmd.getColumnCount();
+        while (rs.next()) {
+            for (int i = 1; i < coln; i++) {
+                String col = rs.getString(i);
+                System.out.println(col + " " + rsmd.getColumnName(i));
+            }
+            System.out.println();
+        }
     }
 
     public void clearTables() {
