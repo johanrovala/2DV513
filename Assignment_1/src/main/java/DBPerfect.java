@@ -7,11 +7,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
+import java.sql.Date;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 
 class DBPerfect implements DB {
 
@@ -195,14 +193,26 @@ class DBPerfect implements DB {
 
     public void getHighestAndLowestUserScore() throws SQLException {
         ResultSet rs = conn.createStatement().executeQuery("SELECT author FROM " + USER_TABLE);
-        ArrayList scores = new ArrayList();
+        String minGuy ="";
+        String maxGuy = "";
+        int max = Integer.MIN_VALUE;
+        int min = Integer.MAX_VALUE;
+
         while (rs.next()) {
             ResultSet userScoreResultSet = conn.createStatement().executeQuery("SELECT sum(score) FROM "+COMMENT_TABLE+" WHERE author='"+rs.getString(1)+"'");
-            scores.add(userScoreResultSet.getString(1));
+            int curr = Integer.valueOf(userScoreResultSet.getString(1));
+            if(curr > max  && !rs.getString(1).equals("[deleted]")) {
+                max = curr;
+                maxGuy = rs.getString(1);
+            }
+            if(curr < min) {
+                min = curr;
+                minGuy = rs.getString(1);
+            }
         }
-        Collections.sort(scores);
-        System.out.println("Lowest Score of all users: " + scores.get(0));
-        System.out.println("Highest Score of all users: " + scores.get(scores.size()-1));
+
+        System.out.println("Lowest Score of all users: " + min + ", user: " + minGuy);
+        System.out.println("Highest Score of all users: " + max+", user: " + maxGuy);
     }
 
     // 5. Which users have the highest and lowest combined scores? (combined as the sum of all scores)
