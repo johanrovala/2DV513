@@ -1,19 +1,10 @@
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.sqlite.SQLiteConfig;
 
 import java.io.*;
 import java.sql.*;
+import java.util.Calendar;
 
 public class SQLite {
-
-    private static String TABLE_NAME = "POST";
-
-    private static String USER_TABLE = "USERS";
-    private static String COMMENT_TABLE = "COMMENTS";
-    private static String LINK_TABLE = "LINKS";
-    private static String SUBREDDIT_TABLE = "SUBREDDITS";
 
     private static Connection conn;
 
@@ -26,19 +17,24 @@ public class SQLite {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:test.db", config.toProperties());
             System.out.println("Connection to DB up..");
-            File file = new File("src/main/resources/RC_2011-07");
+            File file = new File("src/main/resources/RC_2007-10");
 
             DBPerfect dbPerfect = new DBPerfect(conn);
-            DBWithoutConstraints dbWithoutConstraints = new DBWithoutConstraints(conn);
-
-            dbWithoutConstraints.clearTables();
-            dbWithoutConstraints.createTables();
-            dbWithoutConstraints.importData(file);
-            dbWithoutConstraints.clearTables();
+            int sec = 1193635850;
+            Calendar c = Calendar.getInstance();
+            c.setTimeInMillis(sec * 1000L);
+            System.out.println(c.getTime());
+/*
 
             dbPerfect.clearTables();
             dbPerfect.createTables();
             dbPerfect.importData(file);
+ */
+            dbPerfect.getCommentsForUser("HiggsBoson");
+            dbPerfect.getCommentsPerDayOnSub("programming");
+
+
+
 
         } catch (SQLException e) {
             e.printStackTrace();

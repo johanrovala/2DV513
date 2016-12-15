@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
 
 class DBPerfect implements DB {
 
@@ -43,21 +44,24 @@ class DBPerfect implements DB {
                     "author TEXT NOT NULL ," +
                     "body TEXT NOT NULL ," +
                     "score INT NOT NULL ," +
-                    "create_utc INT NOT NULL)";
+                    "create_utc INT NOT NULL , " +
+                    "FOREIGN KEY (author) REFERENCES " + USER_TABLE + "(author) ON DELETE CASCADE," +
+                    "FOREIGN KEY (link_id) REFERENCES " + LINK_TABLE + "(link_id) ON DELETE CASCADE)";
             st.executeUpdate(sql);
             st.close();
 
             st = conn.createStatement();
             sql = "CREATE TABLE IF NOT EXISTS " + LINK_TABLE +
                     " (link_id TEXT PRIMARY KEY, " +
-                    "subreddit_id TEXT NOT NULL)";
+                    "subreddit_id TEXT NOT NULL ," +
+                    "FOREIGN KEY (subreddit_id) REFERENCES " + SUBREDDIT_TABLE + "(subreddit_id) ON DELETE CASCADE)";
             st.executeUpdate(sql);
             st.close();
 
             st = conn.createStatement();
             sql = "CREATE TABLE IF NOT EXISTS " + SUBREDDIT_TABLE +
                     " (subreddit_id TEXT PRIMARY KEY," +
-                    "subreddit TEXT NOT NULL UNIQUE)";
+                    "subreddit TEXT NOT NULL UNIQUE )";
             st.executeUpdate(sql);
             st.close();
         } catch (SQLException e) {
@@ -115,7 +119,7 @@ class DBPerfect implements DB {
             }
             conn.commit();
             conn.setAutoCommit(true);           //Set back to true so we dont have to commit everything in future
-            System.out.println(l + " items inserted, time: " + (System.nanoTime() - startime) / 1000000000);
+            System.out.println(l + " items inserted, time: " + (System.nanoTime() - startime) / 1000000);
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -132,17 +136,38 @@ class DBPerfect implements DB {
     }
 
     public void getCommentsForUser(String user) throws SQLException {
-        ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM " + COMMENT_TABLE + " WHERE author='" + user + "'");
-        ResultSetMetaData rsmd = rs.getMetaData();
+        ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) AS count FROM " + COMMENT_TABLE + " WHERE author='" + user + "'");
+        System.out.println(rs.getInt("count"));
+    }
 
-        int coln = rsmd.getColumnCount();
-        while (rs.next()) {
-            for (int i = 1; i < coln; i++) {
-                String col = rs.getString(i);
-                System.out.println(col + " " + rsmd.getColumnName(i));
-            }
-            System.out.println();
+    public void getCommentsPerDayOnSub(String sub) throws SQLException {
+
+        // Select subreddit_id from given subreddit name
+
+        ResultSet subredditResultSet = conn.createStatement().executeQuery("SELECT subreddit_id FROM " + SUBREDDIT_TABLE + " WHERE subreddit='" + sub + "'");
+        String subreddit_id = subredditResultSet.getString(1);
+
+
+        ResultSet linksResultSet = conn.createStatement().executeQuery("SELECT link_id FROM " + LINK_TABLE + " WHERE subreddit_id='" + subreddit_id + "'");
+
+        // Push all links related to the subreddit to the list links
+        ArrayList<String> links = new ArrayList<String>();
+        while(linksResultSet.next()) {
+            links.add(linksResultSet.getString(1));
         }
+
+        // Get created_utc from comments where link_id is equal
+
+        ResultSet commentsResultSet;
+
+        for (int i = 0; i < links.size(); i++){
+            commentsResultSet = conn.createStatement().executeQuery("SELECT created_utc FROM " + COMMENT_TABLE + " WHERE link_id='" + links.get(i)
+     }
+
+
+
+
+
     }
 
     public void clearTables() {
