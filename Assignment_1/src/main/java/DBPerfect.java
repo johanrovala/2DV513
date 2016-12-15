@@ -1,12 +1,17 @@
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.javafx.binding.StringFormatter;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 
 class DBPerfect implements DB {
 
@@ -135,10 +140,14 @@ class DBPerfect implements DB {
         conn.createStatement().executeUpdate("DELETE FROM " + COMMENT_TABLE + " WHERE author='" + user + "'");
     }
 
+    // 1. How many comments have a specific user posted?
+
     public void getCommentsForUser(String user) throws SQLException {
         ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) AS count FROM " + COMMENT_TABLE + " WHERE author='" + user + "'");
         System.out.println(rs.getInt("count"));
     }
+
+    // 2. How many comments does a specific subreddit get per day?
 
     public void getCommentsPerDayOnSub(String sub) throws SQLException {
 
@@ -159,16 +168,45 @@ class DBPerfect implements DB {
         // Get created_utc from comments where link_id is equal
 
         ResultSet commentsResultSet;
-
+        ArrayList<Date> dates = new ArrayList<Date>();
+        HashSet<String> uniqueDays = new HashSet<String>();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        int amountOfComments = 0;
         for (int i = 0; i < links.size(); i++){
-            commentsResultSet = conn.createStatement().executeQuery("SELECT created_utc FROM " + COMMENT_TABLE + " WHERE link_id='" + links.get(i)
-     }
+            commentsResultSet = conn.createStatement().executeQuery("SELECT create_utc FROM " + COMMENT_TABLE + " WHERE link_id='" + links.get(i) + "'");
+            while(commentsResultSet.next()){
+                amountOfComments++;
+                Date date = new Date(Long.parseLong(commentsResultSet.getString(1)) * 1000);
+                String d = sdf.format(date);
+                uniqueDays.add(d);
+            }
+        }
 
-
-
-
+        System.out.println("Average amount of comments per day for subbreddit: " + sub + " is " + amountOfComments / uniqueDays.size());
 
     }
+
+    // 3. How many comments include the word ‘lol’?
+
+    public void getAmountOfCommentsWithSpecificWord(String word) throws SQLException {
+        ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) AS count FROM " + COMMENT_TABLE + " WHERE body LIKE '%"+word+"%'");
+        System.out.println("Amount of comments with the word " + word + " is " + rs.getInt("count"));
+    }
+
+    public void getHighestAndLowestUserScore() throws SQLException {
+        ResultSet rs = conn.createStatement().executeQuery("SELECT author FROM " + USER_TABLE);
+        ArrayList scores = new ArrayList();
+        while (rs.next()) {
+            ResultSet userScoreResultSet = conn.createStatement().executeQuery("SELECT sum(score) FROM "+COMMENT_TABLE+" WHERE author='"+rs.getString(1)+"'");
+            scores.add(userScoreResultSet.getString(1));
+        }
+        Collections.sort(scores);
+        System.out.println("Lowest Score of all users: " + scores.get(0));
+        System.out.println("Highest Score of all users: " + scores.get(scores.size()-1));
+    }
+
+    // 5. Which users have the highest and lowest combined scores? (combined as the sum of all scores)
+
 
     public void clearTables() {
         System.out.println("Clearing,....");

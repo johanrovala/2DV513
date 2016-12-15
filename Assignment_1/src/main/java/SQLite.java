@@ -30,9 +30,10 @@ public class SQLite {
             dbPerfect.createTables();
             dbPerfect.importData(file);
  */
-            dbPerfect.getCommentsForUser("HiggsBoson");
-            dbPerfect.getCommentsPerDayOnSub("programming");
-
+            //dbPerfect.getCommentsForUser("HiggsBoson");
+            //dbPerfect.getCommentsPerDayOnSub("nsfw");
+            dbPerfect.getAmountOfCommentsWithSpecificWord("lol");
+            dbPerfect.getHighestAndLowestUserScore();
 
 
 
