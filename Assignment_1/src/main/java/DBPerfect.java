@@ -159,7 +159,7 @@ class DBPerfect implements DB {
 
         // Push all links related to the subreddit to the list links
         ArrayList<String> links = new ArrayList<String>();
-        while(linksResultSet.next()) {
+        while (linksResultSet.next()) {
             links.add(linksResultSet.getString(1));
         }
 
@@ -170,9 +170,9 @@ class DBPerfect implements DB {
         HashSet<String> uniqueDays = new HashSet<String>();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
         int amountOfComments = 0;
-        for (int i = 0; i < links.size(); i++){
+        for (int i = 0; i < links.size(); i++) {
             commentsResultSet = conn.createStatement().executeQuery("SELECT create_utc FROM " + COMMENT_TABLE + " WHERE link_id='" + links.get(i) + "'");
-            while(commentsResultSet.next()){
+            while (commentsResultSet.next()) {
                 amountOfComments++;
                 Date date = new Date(Long.parseLong(commentsResultSet.getString(1)) * 1000);
                 String d = sdf.format(date);
@@ -187,36 +187,87 @@ class DBPerfect implements DB {
     // 3. How many comments include the word ‘lol’?
 
     public void getAmountOfCommentsWithSpecificWord(String word) throws SQLException {
-        ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) AS count FROM " + COMMENT_TABLE + " WHERE body LIKE '%"+word+"%'");
+        ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) AS count FROM " + COMMENT_TABLE + " WHERE body LIKE '%" + word + "%'");
         System.out.println("Amount of comments with the word " + word + " is " + rs.getInt("count"));
     }
 
+    // 4. your mom
+    public void findUsersWhoCommentedOnLinkWhoAlsoPostedToSubReddits(String linkid) throws SQLException {
+        ResultSet rs = conn.createStatement().executeQuery("SELECT author FROM " + COMMENT_TABLE + " WHERE link_id='"+ linkid +"'");
+        Set links = new HashSet();
+        while(rs.next()) {
+            String currAuthor = rs.getString(1);
+            ResultSet currentAuthorLinks = conn.createStatement().executeQuery("SELECT DISTINCT link_id FROM " + COMMENT_TABLE + " WHERE author='"+ currAuthor +"'");
+            while(currentAuthorLinks.next()) {
+                links.add(currentAuthorLinks.getString(1));
+            }
+        }
+        ArrayList list = new ArrayList(links);
+        System.out.println(links.size());
+        Set subs = new HashSet();
+        for(int i = 0; i<links.size(); i++) {
+            ResultSet sub = conn.createStatement().executeQuery("SELECT subreddit_id FROM " + LINK_TABLE + " WHERE link_id='"+ list.get(i) +"'");
+            while(sub.next()) {
+                subs.add(sub.getString(1));
+            }
+        }
+        System.out.println(subs.size());
+        System.out.println(subs);
+        ArrayList sublist = new ArrayList(subs);
+
+        Set subname = new HashSet();
+        for(int i = 0; i<sublist.size(); i++) {
+            ResultSet subnames = conn.createStatement().executeQuery("SELECT subreddit FROM " + SUBREDDIT_TABLE + " WHERE subreddit_id='"+ sublist.get(i) +"'");
+            while (subnames.next()) {
+                subname.add(subnames.getString(1));
+            }
+        }
+        System.out.println(subname);
+        System.out.println(subname.size());
+
+    }
+
+    // 5. Which users have the highest and lowest combined scores? (combined as the sum of all scores)
     public void getHighestAndLowestUserScore() throws SQLException {
         ResultSet rs = conn.createStatement().executeQuery("SELECT author FROM " + USER_TABLE);
-        String minGuy ="";
+        String minGuy = "";
         String maxGuy = "";
         int max = Integer.MIN_VALUE;
         int min = Integer.MAX_VALUE;
 
         while (rs.next()) {
-            ResultSet userScoreResultSet = conn.createStatement().executeQuery("SELECT sum(score) FROM "+COMMENT_TABLE+" WHERE author='"+rs.getString(1)+"'");
+            ResultSet userScoreResultSet = conn.createStatement().executeQuery("SELECT sum(score) FROM " + COMMENT_TABLE + " WHERE author='" + rs.getString(1) + "'");
             int curr = Integer.valueOf(userScoreResultSet.getString(1));
-            if(curr > max  && !rs.getString(1).equals("[deleted]")) {
+            if (curr > max && !rs.getString(1).equals("[deleted]")) {
                 max = curr;
                 maxGuy = rs.getString(1);
             }
-            if(curr < min) {
+            if (curr < min) {
                 min = curr;
                 minGuy = rs.getString(1);
             }
         }
 
         System.out.println("Lowest Score of all users: " + min + ", user: " + minGuy);
-        System.out.println("Highest Score of all users: " + max+", user: " + maxGuy);
+        System.out.println("Highest Score of all users: " + max + ", user: " + maxGuy);
     }
 
-    // 5. Which users have the highest and lowest combined scores? (combined as the sum of all scores)
 
+    //6
+
+    public void highestAndLowestSubreddits() throws SQLException{
+        ResultSet rs = conn.createStatement().executeQuery("SELECT link_id, max(score) FROM " + COMMENT_TABLE);
+
+
+        ResultSet subid = conn.createStatement().executeQuery("SELECT subreddit_id FROM "+ LINK_TABLE + " WHERE link_id='"+ rs.getString(1) +"'");
+        ResultSet subname = conn.createStatement().executeQuery("SELECT subreddit FROM " + SUBREDDIT_TABLE + " WHERE subreddit_id='"+ subid.getString(1) +"'");
+        System.out.println("Highest scored comment with score " + rs.getString(2) + " in subreddit: " + subname.getString(1));
+
+        ResultSet min = conn.createStatement().executeQuery("SELECT link_id, min(score) FROM " + COMMENT_TABLE);
+        ResultSet minid = conn.createStatement().executeQuery("SELECT subreddit_id FROM "+ LINK_TABLE + " WHERE link_id='"+ min.getString(1) +"'");
+        ResultSet minsubname = conn.createStatement().executeQuery("SELECT subreddit FROM " + SUBREDDIT_TABLE + " WHERE subreddit_id='"+ minid.getString(1) +"'");
+        System.out.println("Lowest scored comment with score " + min.getString(2) + " in subreddit: " + minsubname.getString(1));
+    }
 
     public void clearTables() {
         System.out.println("Clearing,....");

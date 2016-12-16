@@ -17,23 +17,21 @@ public class SQLite {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:test.db", config.toProperties());
             System.out.println("Connection to DB up..");
-            File file = new File("src/main/resources/RC_2007-10-small.txt");
+            File file = new File("src/main/resources/RC_2007-10");
 
             DBPerfect dbPerfect = new DBPerfect(conn);
-            int sec = 1193635850;
-            Calendar c = Calendar.getInstance();
-            c.setTimeInMillis(sec * 1000L);
-            System.out.println(c.getTime());
 
 
-            dbPerfect.clearTables();
+           /* dbPerfect.clearTables();
             dbPerfect.createTables();
-            dbPerfect.importData(file);
+            dbPerfect.importData(file);*/
 
             //dbPerfect.getCommentsForUser("HiggsBoson");
             //dbPerfect.getCommentsPerDayOnSub("nsfw");
             dbPerfect.getAmountOfCommentsWithSpecificWord("lol");
-            dbPerfect.getHighestAndLowestUserScore();
+          //  dbPerfect.getHighestAndLowestUserScore();
+            //dbPerfect.findUsersWhoCommentedOnLinkWhoAlsoPostedToSubReddits("t3_5z7fv");
+            dbPerfect.highestAndLowestSubreddits();
 
 
 
