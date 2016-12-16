@@ -22,17 +22,27 @@ public class SQLite {
             DBPerfect dbPerfect = new DBPerfect(conn);
 
 
+
            /* dbPerfect.clearTables();
             dbPerfect.createTables();
-            dbPerfect.importData(file);*/
+            dbPerfect.importData(file);
+*/
 
-            //dbPerfect.getCommentsForUser("HiggsBoson");
-            //dbPerfect.getCommentsPerDayOnSub("nsfw");
+            long start = System.nanoTime();
+
+
+
+            dbPerfect.getCommentsForUser("HiggsBoson");
+            dbPerfect.getCommentsPerDayOnSub("nsfw");
             dbPerfect.getAmountOfCommentsWithSpecificWord("lol");
-          //  dbPerfect.getHighestAndLowestUserScore();
-            //dbPerfect.findUsersWhoCommentedOnLinkWhoAlsoPostedToSubReddits("t3_5z7fv");
+            dbPerfect.usersWhoCommentedOnLinkHasPostedToSubreddits("t3_z9oz");
+            dbPerfect.getHighestAndLowestUserScore();
             dbPerfect.highestAndLowestSubreddits();
+            dbPerfect.userHasInteractedWith("Danceswithwires");
+            dbPerfect.usersWhoPostedToASingleSubOnly();
 
+
+            System.out.println("Queries in total took: " + (System.nanoTime()-start)/1000000 + "ms");
 
 
         } catch (SQLException e) {
